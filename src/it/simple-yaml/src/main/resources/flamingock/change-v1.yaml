@@ -1,0 +1,6 @@
+service: flamingock
+version: 1.0
+changes:
+  - id: "change-1"
+    type: "create"
+    collection: "users"

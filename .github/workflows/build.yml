@@ -1,0 +1,41 @@
+name: Build
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java: [8, 11, 17]
+        maven: ['3.9.8']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: maven
+
+#      - name: Set up Maven ${{ matrix.maven }}
+#        uses: stCarolas/setup-maven@v5
+#        with:
+#          maven-version: ${{ matrix.maven }}
+
+      - name: Build and verify
+        run: ./mvnw -B clean verify
+
+      - name: Upload IT logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: it-logs-java${{ matrix.java }}
+          path: |
+            target/it-projects/*/build.log
+            target/it-projects/*/target/generated-sources/**/*
+          retention-days: 5
