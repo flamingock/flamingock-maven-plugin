@@ -10,8 +10,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    branches:
-      - master
 
 jobs:
   release:
@@ -41,17 +39,11 @@ jobs:
             echo "is_snapshot=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Set up GPG
+      - name: Build and prepare artifacts
         run: |
-          echo "$GPG_SECRET_KEY" > private.asc
-          gpg --import --batch private.asc
-        env:
-          GPG_SECRET_KEY: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_SECRET_KEY }}
-
-      - name: Build and sign artifacts without publishing
-        env:
-          JRELEASER_GPG_PASSPHRASE: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_PASSPHRASE }}
-        run: ./mvnw -B -Prelease clean verify
+          ./mvnw -B -Prelease clean deploy \
+          -Dgpg.skip=true \
+          -DaltDeploymentRepository=local::default::file:target/staging-deploy
 
       - name: Dry-run deploy to Central Portal for SNAPSHOT versions
         if: steps.release_version.outputs.is_snapshot == 'true'
@@ -59,8 +51,10 @@ jobs:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.FLAMINGOCK_JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.FLAMINGOCK_JRELEASER_MAVENCENTRAL_PASSWORD }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_PASSPHRASE }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_SECRET_KEY }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_PUBLIC_KEY }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.FLAMINGOCK_JRELEASER_GITHUB_TOKEN }}
-        run: ./mvnw -B -Prelease jreleaser:deploy -Djreleaser.dry.run=true
+        run: ./mvnw -B -Prelease jreleaser:deploy -Djreleaser.dry.run=true -Djreleaser.config.file=jreleaser.yml
 
       - name: Deploy to Central Portal
         if: steps.release_version.outputs.is_snapshot != 'true'
@@ -68,8 +62,10 @@ jobs:
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.FLAMINGOCK_JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.FLAMINGOCK_JRELEASER_MAVENCENTRAL_PASSWORD }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_PASSPHRASE }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_SECRET_KEY }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.FLAMINGOCK_JRELEASER_GPG_PUBLIC_KEY }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.FLAMINGOCK_JRELEASER_GITHUB_TOKEN }}
-        run: ./mvnw -B -Prelease jreleaser:deploy
+        run: ./mvnw -B -Prelease jreleaser:deploy -Djreleaser.config.file=jreleaser.yml
 
       - name: Create and push release tag
         if: steps.release_version.outputs.is_snapshot != 'true'

@@ -2,28 +2,16 @@
 # Activated via the `release` Maven profile during manual-dispatch releases.
 # Credentials and secrets are injected via GitHub Actions environment variables.
 # -----------------------------------------------------------------------------
-# Project metadata — overridden at release time via workflow inputs
-project:
-  name: flamingock-maven-plugin
-  description: Flamingock Maven Plugin
-  license: Apache-2.0
-  version: 0.1.0-SNAPSHOT
-  inceptionYear: 2026
-  links:
-    homepage: https://flamingock.io
-    license: https://spdx.org/licenses/Apache-2.0.html
-
-# -----------------------------------------------------------------------------
 # GPG signing — armored ASCII, passphrase from environment
 signing:
   active: ALWAYS
   armored: true
-  passphrase: ${JRELEASER_GPG_PASSPHRASE}
   mode: MEMORY
 
 # -----------------------------------------------------------------------------
 # Maven Central deployment target (JReleaser 1.15.0+ mavenCentral sub-type)
 deploy:
+  active: ALWAYS
   maven:
     mavenCentral:
       flamingock:
